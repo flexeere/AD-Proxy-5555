@@ -17,7 +17,8 @@ CYAN='\033[0;36m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-REPO="https://raw.githubusercontent.com/flexeere/AD-Proxy-5515/main"
+PORT=5555
+REPO="https://raw.githubusercontent.com/flexeere/AD-Proxy-5555/main"
 
 [[ $(id -u) -eq 0 ]] || { echo -e "${RED}Run as root!${NC}"; exit 1; }
 
@@ -71,10 +72,10 @@ wget -q --no-check-certificate -O /etc/squid/squid.conf "$CONFIG_URL"
 touch /etc/squid/passwd /etc/squid/blacklist.acl
 
 if command -v iptables &>/dev/null; then
-    iptables -C INPUT -p tcp --dport 5515 -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport 5515 -j ACCEPT
+    iptables -C INPUT -p tcp --dport $PORT -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport $PORT -j ACCEPT
 fi
 if command -v firewall-cmd &>/dev/null; then
-    firewall-cmd --zone=public --permanent --add-port=5515/tcp || true
+    firewall-cmd --zone=public --permanent --add-port=$PORT/tcp || true
     firewall-cmd --reload || true
 fi
 
@@ -87,4 +88,8 @@ PASSWORD=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c8)
 htpasswd -b -c /etc/squid/passwd "$USERNAME" "$PASSWORD"
 
 echo -e "${GREEN}Thank you for using AD Proxy Service.${NC}"
-echo -e "${CYAN}Username: $USERNAME\nPassword: $PASSWORD\nPort: 5515${NC}"
+echo "==============================="
+echo -e "${CYAN}Username: $USERNAME"
+echo -e "Password: $PASSWORD"
+echo -e "Port:     $PORT${NC}"
+echo "==============================="
