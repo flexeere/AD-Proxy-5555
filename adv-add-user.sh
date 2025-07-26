@@ -13,6 +13,7 @@
 set -euo pipefail
 
 PASSWD_FILE="/etc/squid/passwd"
+PORT=5555
 
 if [[ $(id -u) -ne 0 ]]; then
     echo "Run as root."
@@ -24,7 +25,6 @@ if ! command -v htpasswd >/dev/null; then
     exit 1
 fi
 
-# Random username/password logic
 USERNAME=$(tr -dc 'a-z' </dev/urandom | head -c8)
 PASSWORD=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c8)
 
@@ -35,4 +35,5 @@ echo "==================================="
 echo "Proxy user created!"
 echo "Username: $USERNAME"
 echo "Password: $PASSWORD"
+echo "Port:     $PORT"
 echo "==================================="
