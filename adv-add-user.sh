@@ -12,17 +12,27 @@
 
 set -euo pipefail
 
+PASSWD_FILE="/etc/squid/passwd"
+
 if [[ $(id -u) -ne 0 ]]; then
     echo "Run as root."
     exit 1
 fi
 
-read -p "Enter username: " USERNAME
-read -s -p "Enter password: " PASSWORD
-echo
-[[ -z "$USERNAME" || -z "$PASSWORD" ]] && { echo "No blank fields."; exit 1; }
+if ! command -v htpasswd >/dev/null; then
+    echo "htpasswd not found. Please install apache2-utils or httpd-tools."
+    exit 1
+fi
 
-htpasswd -b /etc/squid/passwd "$USERNAME" "$PASSWORD"
+# Random username/password logic
+USERNAME=$(tr -dc 'a-z' </dev/urandom | head -c8)
+PASSWORD=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c8)
+
+htpasswd -b "$PASSWD_FILE" "$USERNAME" "$PASSWORD"
 systemctl reload squid || systemctl restart squid
 
-echo "User $USERNAME added to Squid proxy."
+echo "==================================="
+echo "Proxy user created!"
+echo "Username: $USERNAME"
+echo "Password: $PASSWORD"
+echo "==================================="
