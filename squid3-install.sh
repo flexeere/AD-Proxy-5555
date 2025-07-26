@@ -17,14 +17,12 @@ CYAN='\033[0;36m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-REPO="https://raw.githubusercontent.com/flexeere/AD-Proxy-5555/main"
+REPO="https://raw.githubusercontent.com/flexeere/AD-Proxy-5515/main"
 
-# Ensure root privileges
 [[ $(id -u) -eq 0 ]] || { echo -e "${RED}Run as root!${NC}"; exit 1; }
 
 echo -e "${CYAN}AD Proxy Installer (Optimized)...${NC}"
 
-# Install helper scripts (in parallel)
 install_helpers() {
     declare -A scripts=(
         ["/usr/local/bin/sok-find-os"]="$REPO/sok-find-os.sh"
@@ -39,25 +37,18 @@ install_helpers() {
 }
 install_helpers
 
-# Check for existing install
 if [[ -d /etc/squid || -d /etc/squid3 ]]; then
     echo -e "${GREEN}AD Proxy already installed.${NC}"; exit 0
 fi
 
-# Detect OS
 [[ -f /usr/local/bin/sok-find-os ]] || { echo "sok-find-os missing"; exit 1; }
 OS=$(/usr/local/bin/sok-find-os)
 [[ "$OS" == "ERROR" ]] && { echo "Unsupported OS"; exit 1; }
 
-# Install packages
 case "$OS" in
     ubuntu*|debian*)
         apt update -qq
-        if [[ "$OS" =~ ubuntu22 ]]; then
-            apt -y install apache2-utils squid
-        else
-            apt -y install apache2-utils squid
-        fi
+        apt -y install apache2-utils squid
         ;;
     centos*|almalinux*)
         (command -v dnf && dnf install -y squid httpd-tools wget) || yum install -y squid httpd-tools wget
@@ -67,7 +58,6 @@ case "$OS" in
         ;;
 esac
 
-# Download Squid config
 CONFIG_URL="$REPO/squid.conf"
 if [[ "$OS" == "ubuntu2204" ]]; then
     CONFIG_URL="$REPO/conf/ubuntu-2204.conf"
@@ -80,24 +70,21 @@ mkdir -p /etc/squid
 wget -q --no-check-certificate -O /etc/squid/squid.conf "$CONFIG_URL"
 touch /etc/squid/passwd /etc/squid/blacklist.acl
 
-# Open firewall port
 if command -v iptables &>/dev/null; then
-    iptables -C INPUT -p tcp --dport 5555 -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport 5555 -j ACCEPT
+    iptables -C INPUT -p tcp --dport 5515 -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport 5515 -j ACCEPT
 fi
 if command -v firewall-cmd &>/dev/null; then
-    firewall-cmd --zone=public --permanent --add-port=5555/tcp || true
+    firewall-cmd --zone=public --permanent --add-port=5515/tcp || true
     firewall-cmd --reload || true
 fi
 
-# Enable/restart squid
 systemctl enable squid || true
 systemctl restart squid || true
 
-# Create a proxy user
-USER=$(tr -dc 'a-z' </dev/urandom | head -c8)
-PW=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c8)
-htpasswd -b -c /etc/squid/passwd "$USER" "$PW"
+# RANDOM USERNAME/PASSWORD LOGIC HERE
+USERNAME=$(tr -dc 'a-z' </dev/urandom | head -c8)
+PASSWORD=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c8)
+htpasswd -b -c /etc/squid/passwd "$USERNAME" "$PASSWORD"
 
-# Finish
 echo -e "${GREEN}Thank you for using AD Proxy Service.${NC}"
-echo -e "${CYAN}Username: $USER\nPassword: $PW\nPort: 5555${NC}"
+echo -e "${CYAN}Username: $USERNAME\nPassword: $PASSWORD\nPort: 5515${NC}"
